@@ -1,0 +1,95 @@
+{
+  "name": "BYEX Support Theme (Custom Widget)",
+  "author": "宋达",
+  "version": "1.0.0",
+  "api_version": 3,
+  "license": "MIT",
+  "framework_version": "2.0",
+  "assets": [
+    {
+      "filename": "style.css"
+    },
+    {
+      "filename": "script.js"
+    },
+    {
+      "filename": "support-widget.css"
+    },
+    {
+      "filename": "support-widget.js"
+    },
+    {
+      "filename": "logo.svg"
+    }
+  ],
+  "templates": {
+    "article_page": {
+      "filename": "templates/article_page.hbs"
+    },
+    "category_page": {
+      "filename": "templates/category_page.hbs"
+    },
+    "document_head": {
+      "filename": "templates/document_head.hbs"
+    },
+    "footer": {
+      "filename": "templates/footer.hbs"
+    },
+    "header": {
+      "filename": "templates/header.hbs"
+    },
+    "home_page": {
+      "filename": "templates/home_page.hbs"
+    },
+    "new_request_page": {
+      "filename": "templates/new_request_page.hbs"
+    },
+    "requests_page": {
+      "filename": "templates/requests_page.hbs"
+    },
+    "search_results": {
+      "filename": "templates/search_results.hbs"
+    },
+    "section_page": {
+      "filename": "templates/section_page.hbs"
+    }
+  },
+  "settings": [
+    {
+      "label": "brand_group_label",
+      "variables": [
+        {
+          "identifier": "logo",
+          "type": "file",
+          "label": "logo_label",
+          "description": "logo_description"
+        },
+        {
+          "identifier": "favicon",
+          "type": "file",
+          "label": "favicon_label",
+          "description": "favicon_description"
+        },
+        {
+          "identifier": "brand_color",
+          "type": "color",
+          "label": "brand_color_label",
+          "description": "brand_color_description",
+          "value": "#4da3ff"
+        }
+      ]
+    },
+    {
+      "label": "integrations_group_label",
+      "variables": [
+        {
+          "identifier": "snippet_key",
+          "type": "text",
+          "label": "snippet_key_label",
+          "description": "snippet_key_description",
+          "value": ""
+        }
+      ]
+    }
+  ]
+}
