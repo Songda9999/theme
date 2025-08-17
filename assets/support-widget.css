@@ -1,0 +1,28 @@
+
+/* Custom Support Widget */
+#open-support-btn{
+  position:fixed; right:18px; bottom:18px; width:56px; height:56px;
+  border-radius:50%; background:var(--brand); color:#001023; display:flex;
+  align-items:center; justify-content:center; font-weight:700; cursor:pointer;
+  box-shadow:0 8px 24px rgba(0,0,0,.35); z-index:2147483647;
+  animation:pulse-subtle 2.5s infinite;
+}
+#open-support-btn.hidden{display:none!important}
+@keyframes pulse-subtle{
+  0%{box-shadow:0 0 0 0 rgba(77,163,255,.45)}
+  70%{box-shadow:0 0 0 18px rgba(77,163,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(77,163,255,0)}
+}
+
+#support-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:2147483646}
+#support-modal{position:fixed;right:18px;bottom:86px;width:min(420px,95vw);height:min(70vh,640px);background:#0f1622;
+  border:1px solid #213044;border-radius:16px;display:none;flex-direction:column;z-index:2147483646}
+#support-modal header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #213044}
+#support-modal header h4{margin:0;font-size:16px}
+#faq-scroll{flex:1;overflow:auto;padding:12px}
+#support-modal footer{padding:12px;border-top:1px solid #213044;display:flex;gap:8px;justify-content:flex-end}
+#support-modal .btn{background:var(--brand);color:#001023;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+#support-modal .btn.secondary{background:#18263a;color:#e8eef6}
+
+ /* Hide official launcher if present so only our button shows */
+iframe[title*="Messaging launcher"], iframe[src*="launcher"], .web-messenger-container, .zEWidget-launcher{ display:none !important; }

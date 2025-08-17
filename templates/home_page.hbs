@@ -1,0 +1,64 @@
+{{! Home page }}
+{{> header}}
+
+<section class="hc-hero">
+  <div class="hc-hero__inner">
+    <h1 class="hc-title">{{t 'how_can_we_help'}}</h1>
+    {{search submit=false instant=true class='hc-search'}}
+  </div>
+</section>
+
+<nav class="hc-quick">
+  <a class="hc-quick__item" href="{{link 'new_request'}}">
+    <span class="hc-quick__icon">📝</span><span>{{t 'submit_a_request'}}</span>
+  </a>
+  <a class="hc-quick__item" href="/hc/{{help_center.locale}}/requests">
+    <span class="hc-quick__icon">📩</span><span>{{t 'my_requests'}}</span>
+  </a>
+  <a class="hc-quick__item" href="/hc/{{help_center.locale}}/search">
+    <span class="hc-quick__icon">🔎</span><span>{{t 'search'}}</span>
+  </a>
+</nav>
+
+<section class="hc-grid">
+  <h2 class="hc-subtitle">{{t 'browse_topics'}}</h2>
+  {{#if categories}}
+    <ul class="hc-cards">
+      {{#each categories}}
+        {{#if (neq name "Community")}}
+          <li class="hc-card">
+            <a class="hc-card__link" href="{{url}}">
+              <div class="hc-card__title">{{name}}</div>
+              <div class="hc-card__desc">
+                {{#if description}}{{{description}}}{{else}}{{count articles}} {{t 'articles'}}{{/if}}
+              </div>
+            </a>
+          </li>
+        {{/if}}
+      {{/each}}
+    </ul>
+  {{else}}
+    <p class="hc-empty">{{t 'no_categories'}}</p>
+  {{/if}}
+</section>
+
+<section class="hc-popular">
+  <h2 class="hc-subtitle">{{t 'popular_articles'}}</h2>
+  <ul class="hc-list">
+    {{#each promoted_articles}}
+      <li class="hc-list__item"><a href="{{url}}">{{title}}</a></li>
+    {{/each}}
+  </ul>
+</section>
+
+<section class="hc-cta">
+  <div class="hc-cta__inner">
+    <div class="hc-cta__text">
+      <h3>{{t 'cant_find_answer'}}</h3>
+      <p>{{t 'contact_us_anytime'}}</p>
+    </div>
+    <a class="hc-btn" href="{{link 'new_request'}}">{{t 'contact_support'}}</a>
+  </div>
+</section>
+
+{{> footer}}

@@ -1,0 +1,11 @@
+{{> header}}
+<main class="container" style="padding:24px 0">
+  {{breadcrumbs}}
+  <h1>{{section.name}}</h1>
+  <ul>
+    {{#each articles}}
+      <li><a href="{{url}}">{{title}}</a></li>
+    {{/each}}
+  </ul>
+</main>
+{{> footer}}
