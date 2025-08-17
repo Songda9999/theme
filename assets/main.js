@@ -39,18 +39,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('footer-language-text-mobile').textContent = langName;
 
         // Trigger Zendesk API re-load for new language
-        console.log('Calling Zendesk API functions...');
         if (typeof loadLatestArticles === 'function') {
-            console.log('Loading latest articles...');
             loadLatestArticles();
-        } else {
-            console.log('loadLatestArticles function not available');
         }
         if (typeof loadPopularArticles === 'function') {
-            console.log('Loading popular articles...');
             loadPopularArticles();
-        } else {
-            console.log('loadPopularArticles function not available');
         }
 
         // Notify other scripts about language change
@@ -96,7 +89,6 @@ document.addEventListener('DOMContentLoaded', function () {
             languageModal.classList.remove('opacity-0');
             languageModalPanel.classList.remove('opacity-0', 'scale-95');
         }, 10);
-        console.log('Language modal opened');
     };
 
     const closeModal = () => {
@@ -117,7 +109,6 @@ document.addEventListener('DOMContentLoaded', function () {
             languageModal.style.transition = '';
             languageModalPanel.style.transition = '';
         }, 0);
-        console.log('Language modal closed');
     };
 
 
@@ -135,24 +126,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (languageGrid) {
         languageGrid.addEventListener('click', (e) => {
-            console.log('Language grid clicked');
             const selectedButton = e.target.closest('.language-item');
             if (!selectedButton) {
-                console.log('No language item found');
                 return;
             }
-            console.log('Language item clicked:', selectedButton.textContent);
             const langCode = selectedButton.dataset.langCode;
-            console.log('Language code:', langCode);
             
             try {
                 setLanguage(langCode);
-                console.log('setLanguage completed');
             } catch (error) {
                 console.error('Error in setLanguage:', error);
             }
             
-            console.log('Calling closeModal');
             closeModal();
         });
     }
