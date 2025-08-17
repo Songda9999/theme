@@ -74,3 +74,21 @@
   "visited_link_color_description": "Text color for visited link elements",
   "visited_link_color_label": "Visited link color"
 }
+{
+  "nav": {
+    "market": "Markets",
+    "spot": "Spot",
+    "spot_basic": "Spot Trading",
+    "spot_margin": "Margin Trading",
+    "spot_grid": "Grid Trading",
+    "futures": "Futures",
+    "c2c": "C2C",
+    "c2c_normal": "Classic",
+    "c2c_ad": "Post Ad",
+    "c2c_merchant": "Apply Merchant",
+    "finance": "Earn",
+    "byb": "BYB Zone",
+    "loan": "Crypto Loans",
+    "switch_lang": "Switch language"
+  }
+}
