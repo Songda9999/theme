@@ -4,12 +4,6 @@
   "version": "1.0.0",
   "api_version": 4,
   "default_locale": "zh-cn",
-
-  "translations": {
-    "en-us": "translations/en-us.json",
-    "zh-cn": "translations/zh-cn.json"
-  },
-
   "settings": [
     {
       "label": "colors_group_label",
