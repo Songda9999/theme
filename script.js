@@ -1,1088 +1,241 @@
-(function () {
-  'use strict';
+/* ========= 通用工具 ========= */
+function ready(fn) {
+  if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
 
-  // Key map
-  const ENTER = 13;
-  const ESCAPE = 27;
+/* ========= 语言切换（动态） ========= */
 
-  // Helper function to get current language from URL
-  function getCurrentLanguageFromURL() {
-    const path = window.location.pathname;
-    const segments = path.split('/').filter(segment => segment.length > 0);
-    
-    // Check if first segment is a language code
-    if (segments.length > 0) {
-      const possibleLangCode = segments[0];
-      // Common language codes pattern
-      if (/^[a-z]{2}(-[a-z]{2})?$/i.test(possibleLangCode)) {
-        return possibleLangCode.toLowerCase();
-      }
-    }
-    
-    // Fallback: check for language in URL parameters or default
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('locale') || 'zh-cn';
+// 当前 HC 语言
+function getCurrentHcLocale() {
+  const lc =
+    (window.HelpCenter && (window.HelpCenter.user?.locale || window.HelpCenter.locale)) ||
+    'en-us';
+  return String(lc).toLowerCase().replace('_', '-');
+}
+
+// 获取支持的语言（优先 HelpCenter.locales，失败则请求 API）
+let __localeCache = null;
+async function getSupportedLocalesAsync() {
+  if (__localeCache) return __localeCache;
+
+  const injected = (window.HelpCenter && window.HelpCenter.locales) || [];
+  const normalizedInjected = injected
+    .map((l) => String(l).toLowerCase().replace('_', '-'))
+    .filter(Boolean);
+
+  if (normalizedInjected.length) {
+    __localeCache = Array.from(new Set(normalizedInjected));
+    return __localeCache;
   }
 
-  // Helper function to convert language code for URLs
-  function getLanguageForURL(langCode) {
-    // Convert language codes to the format used in URLs
-    const langMap = {
-      'zh-cn': 'zh_CN',
-      'zh-tw': 'zh_TW', 
-      'en-us': 'en_US',
-      'en-gb': 'en_GB',
-      'ja': 'ja_JP',
-      'ko': 'ko_KR',
-      'fr': 'fr_FR',
-      'de': 'de_DE',
-      'es': 'es_ES',
-      'pt': 'pt_BR',
-      'ru': 'ru_RU',
-      'ar': 'ar_SA',
-      'th': 'th_TH',
-      'vi': 'vi_VN',
-      'id': 'id_ID',
-      'hi': 'hi_IN',
-      'tr': 'tr_TR',
-      'it': 'it_IT',
-      'nl': 'nl_NL',
-      'pl': 'pl_PL'
-    };
-    return langMap[langCode] || 'zh_CN';
+  try {
+    const res = await fetch('/api/v2/help_center/locales.json', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('fetch locales failed');
+    const data = await res.json();
+    const arr = Array.isArray(data) ? data : (Array.isArray(data.locales) ? data.locales : []);
+    const normalized = arr.map((l) => String(l).toLowerCase().replace('_', '-')).filter(Boolean);
+    __localeCache = normalized.length ? Array.from(new Set(normalized)) : ['zh-cn','en-us'];
+  } catch (e) {
+    __localeCache = ['zh-cn','en-us'];
   }
+  return __localeCache;
+}
 
-  // Helper function to update all URLs with new language
-  function updateURLsWithLanguage(newLangCode) {
-    const urlLangCode = getLanguageForURL(newLangCode);
-    
-    // Update all elements with data-translate-href attribute
-    const elementsWithTranslateHref = document.querySelectorAll('[data-translate-href]');
-    elementsWithTranslateHref.forEach(element => {
-      const currentHref = element.getAttribute('href');
-      if (currentHref) {
-        // Replace language code in URL
-        const updatedHref = currentHref.replace(/\/[a-z]{2}_[A-Z]{2}\//g, `/${urlLangCode}/`);
-        element.setAttribute('href', updatedHref);
-      }
-    });
-    
-    // Store language preference
-    localStorage.setItem('preferred-language', newLangCode);
-    
-    // Optionally reload page with new language (uncomment if needed)
-    // window.location.reload();
+// 语言显示名
+function prettyName(locale) {
+  const lc = String(locale || '').toLowerCase();
+  const override = {
+    'zh-cn': '简体中文',
+    'zh-tw': '繁體中文',
+    'en-us': 'English (US)',
+    'en-gb': 'English (UK)'
+  };
+  if (override[lc]) return override[lc];
+
+  try {
+    const ui = getCurrentHcLocale();
+    const [lang, region] = lc.split('-');
+    const langNames = new Intl.DisplayNames([ui], { type: 'language', languageDisplay: 'standard' });
+    const regionNames = new Intl.DisplayNames([ui], { type: 'region' });
+    let name = langNames.of(lang) || lc;
+    if (region) {
+      const rn = regionNames.of(region.toUpperCase());
+      if (rn) name = `${name}（${rn}）`;
+    }
+    return name;
+  } catch {
+    return lc;
   }
+}
 
-  function toggleNavigation(toggle, menu) {
-    const isExpanded = menu.getAttribute("aria-expanded") === "true";
-    menu.setAttribute("aria-expanded", !isExpanded);
-    toggle.setAttribute("aria-expanded", !isExpanded);
-  }
+// 切换 URL
+function buildHcLocaleUrl(targetLocale) {
+  const parts = window.location.pathname.split('/');
+  const i = parts.findIndex((p) => p === 'hc');
+  if (i >= 0 && parts[i + 1]) parts[i + 1] = targetLocale;
+  return parts.join('/') + window.location.search + window.location.hash;
+}
 
-  function closeNavigation(toggle, menu) {
-    menu.setAttribute("aria-expanded", false);
-    toggle.setAttribute("aria-expanded", false);
-    toggle.focus();
-  }
-
-  // Navigation
-
-  window.addEventListener("DOMContentLoaded", () => {
-    // Mobile menu toggle
-    const mobileMenuButton = document.querySelector("#mobile-menu-button");
-    const mobileMenu = document.querySelector("#mobile-menu");
-    const mobileMenuClose = document.querySelector("#mobile-menu-close");
-
-    function closeMobileMenu() {
-      if (mobileMenu && mobileMenuButton) {
-        mobileMenu.classList.remove("open");
-        mobileMenuButton.setAttribute("aria-expanded", "false");
-        // Add hidden class after transition completes
-        setTimeout(() => {
-          if (!mobileMenu.classList.contains("open")) {
-            mobileMenu.classList.add("hidden");
-          }
-        }, 300);
-      }
-    }
-
-    function openMobileMenu() {
-      if (mobileMenu && mobileMenuButton) {
-        mobileMenu.classList.remove("hidden");
-        mobileMenuButton.setAttribute("aria-expanded", "true");
-        // Force reflow then add open class for smooth animation
-        mobileMenu.offsetHeight;
-        mobileMenu.classList.add("open");
-      }
-    }
-
-    if (mobileMenuButton && mobileMenu) {
-      mobileMenuButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const isExpanded = mobileMenuButton.getAttribute("aria-expanded") === "true";
-        
-        if (isExpanded) {
-          closeMobileMenu();
-        } else {
-          openMobileMenu();
-        }
-      });
-
-      // Close button in mobile menu
-      if (mobileMenuClose) {
-        mobileMenuClose.addEventListener("click", (event) => {
-          event.stopPropagation();
-          closeMobileMenu();
-        });
-      }
-
-      // Close menu when clicking outside
-      document.addEventListener("click", (event) => {
-        if (!mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
-          closeMobileMenu();
-        }
-      });
-
-      // Handle ESC key
-      document.addEventListener("keyup", (event) => {
-        if (event.keyCode === ESCAPE && !mobileMenu.classList.contains("hidden")) {
-          closeMobileMenu();
-        }
-      });
-    }
-
-    // Mobile language switcher functionality
-    const mobileLanguageButton = document.querySelector("#mobile-language-button");
-    const mobileLanguageText = document.querySelector("#mobile-language-text");
-    
-    if (mobileLanguageButton && mobileLanguageText) {
-      // Dynamic language list based on available translations
-      const languages = [
-        { code: 'zh-cn', name: '简体中文' },
-        { code: 'zh-tw', name: '繁體中文' },
-        { code: 'en-us', name: 'English (US)' },
-        { code: 'en-gb', name: 'English (UK)' },
-        { code: 'ja', name: '日本語' },
-        { code: 'ko', name: '한국어' },
-        { code: 'fr', name: 'Français' },
-        { code: 'de', name: 'Deutsch' },
-        { code: 'es', name: 'Español' },
-        { code: 'pt', name: 'Português' },
-        { code: 'ru', name: 'Русский' },
-        { code: 'ar', name: 'العربية' },
-        { code: 'th', name: 'ไทย' },
-        { code: 'vi', name: 'Tiếng Việt' },
-        { code: 'id', name: 'Bahasa Indonesia' },
-        { code: 'hi', name: 'हिन्दी' },
-        { code: 'tr', name: 'Türkçe' },
-        { code: 'it', name: 'Italiano' },
-        { code: 'nl', name: 'Nederlands' },
-        { code: 'pl', name: 'Polski' }
-      ];
-      
-      // Get current language from URL or default to zh-cn
-      let currentLanguageCode = getCurrentLanguageFromURL() || 'zh-cn';
-      let currentLanguageIndex = languages.findIndex(lang => lang.code === currentLanguageCode);
-      if (currentLanguageIndex === -1) currentLanguageIndex = 0;
-      
-      let isLanguageMenuOpen = false;
-      
-      // Update initial display text
-      mobileLanguageText.textContent = languages[currentLanguageIndex].name;
-      
-      // Create language selection menu
-      const languageMenu = document.createElement('div');
-      languageMenu.className = 'language-menu hidden absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 mt-1';
-      languageMenu.style.cssText = 'position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 50; margin-top: 4px; display: none;';
-      
-      // Add language options to menu
-      languages.forEach((language, index) => {
-        const option = document.createElement('button');
-        option.className = 'w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100 last:border-b-0';
-        option.style.cssText = 'width: 100%; text-align: left; padding: 12px 16px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6;';
-        option.textContent = language.name;
-        option.addEventListener('mouseenter', () => {
-          option.style.backgroundColor = '#f9fafb';
-        });
-        option.addEventListener('mouseleave', () => {
-          option.style.backgroundColor = 'transparent';
-        });
-        option.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Only switch if user selected a different language
-          if (index !== currentLanguageIndex) {
-            currentLanguageIndex = index;
-            const newLanguage = languages[currentLanguageIndex];
-            
-            // Update the display text
-            mobileLanguageText.textContent = newLanguage.name;
-            
-            // Update all URLs with new language
-            updateURLsWithLanguage(newLanguage.code);
-            
-            // Add brief visual feedback
-            mobileLanguageButton.style.backgroundColor = '#f3f4f6';
-            setTimeout(() => {
-              mobileLanguageButton.style.backgroundColor = 'transparent';
-            }, 200);
-            
-            // Update current language code
-            currentLanguageCode = newLanguage.code;
-          }
-          
-          // Close the menu
-          closeLanguageMenu();
-        });
-        languageMenu.appendChild(option);
-      });
-      
-      // Insert menu after the button
-      mobileLanguageButton.parentNode.style.position = 'relative';
-      mobileLanguageButton.parentNode.appendChild(languageMenu);
-      
-      function openLanguageMenu() {
-        isLanguageMenuOpen = true;
-        languageMenu.style.display = 'block';
-        languageMenu.classList.remove('hidden');
-        
-        // Highlight current language
-        const options = languageMenu.querySelectorAll('button');
-        options.forEach((option, index) => {
-          if (index === currentLanguageIndex) {
-            option.style.backgroundColor = '#f3f4f6';
-            option.style.fontWeight = '600';
-          } else {
-            option.style.backgroundColor = 'transparent';
-            option.style.fontWeight = 'normal';
-          }
-        });
-      }
-      
-      function closeLanguageMenu() {
-        isLanguageMenuOpen = false;
-        languageMenu.style.display = 'none';
-        languageMenu.classList.add('hidden');
-      }
-      
-      // Button click handler - toggle menu instead of switching language
-      mobileLanguageButton.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        
-        if (isLanguageMenuOpen) {
-          closeLanguageMenu();
-        } else {
-          openLanguageMenu();
-        }
-      });
-      
-      // Close menu when clicking outside
-      document.addEventListener('click', (event) => {
-        if (isLanguageMenuOpen && 
-            !mobileLanguageButton.contains(event.target) && 
-            !languageMenu.contains(event.target)) {
-          closeLanguageMenu();
-        }
-      });
-      
-      // Close menu on escape key
-      document.addEventListener('keyup', (event) => {
-        if (event.keyCode === ESCAPE && isLanguageMenuOpen) {
-          closeLanguageMenu();
-        }
-      });
-    }
-
-    // Mobile accordion functionality
-    const mobileAccordionTriggers = document.querySelectorAll(".mobile-accordion-trigger");
-    mobileAccordionTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        
-        const submenu = trigger.nextElementSibling;
-        const chevron = trigger.querySelector(".chevron-icon");
-        
-        if (submenu && chevron) {
-          const isOpen = submenu.classList.contains("show");
-          
-          if (isOpen) {
-            submenu.classList.remove("show");
-            submenu.classList.add("hidden");
-            submenu.style.maxHeight = "0";
-            chevron.style.transform = "rotate(0deg)";
-          } else {
-            submenu.classList.remove("hidden");
-            submenu.classList.add("show");
-            submenu.style.maxHeight = "200px";
-            chevron.style.transform = "rotate(180deg)";
-          }
-        }
-      });
-    });
-
-    // Legacy navigation support
-    const menuButton = document.querySelector(".header .menu-button-mobile");
-    const menuList = document.querySelector("#user-nav-mobile");
-
-    if (menuButton && menuList) {
-      menuButton.addEventListener("click", (event) => {
-        event.stopPropagation();
-        toggleNavigation(menuButton, menuList);
-      });
-
-      menuList.addEventListener("keyup", (event) => {
-        if (event.keyCode === ESCAPE) {
-          event.stopPropagation();
-          closeNavigation(menuButton, menuList);
-        }
-      });
-    }
-
-    // Toggles expanded aria to collapsible elements
-    const collapsible = document.querySelectorAll(
-      ".collapsible-nav, .collapsible-sidebar"
+// 切换语言
+function switchLanguage(targetLocale) {
+  if (!targetLocale) return;
+  const mapUrl = (lang) =>
+    String(lang).toLowerCase().replace('-', '_').replace(/^([a-z]{2})_([a-z]{2})$/i, (m, a, b) =>
+      `${a}_${b.toUpperCase()}`
     );
 
-    collapsible.forEach((element) => {
-      const toggle = element.querySelector(
-        ".collapsible-nav-toggle, .collapsible-sidebar-toggle"
-      );
+  const newLangForHref = mapUrl(targetLocale);
+  document.querySelectorAll('[data-translate-href]').forEach((el) => {
+    const href = el.getAttribute('href') || '';
+    if (!href) return;
+    const updated = href.replace(/\/[a-z]{2}_[A-Z]{2}\//g, `/${newLangForHref}/`);
+    el.setAttribute('href', updated);
+  });
 
-      element.addEventListener("click", () => {
-        toggleNavigation(toggle, element);
-      });
+  window.location.href = buildHcLocaleUrl(targetLocale);
+}
 
-      element.addEventListener("keyup", (event) => {
-        if (event.keyCode === ESCAPE) {
-          closeNavigation(toggle, element);
-        }
-      });
-    });
+// 打开语言选择弹窗
+async function openLangModal() {
+  const existed = document.getElementById('lang-modal');
+  if (existed) existed.remove();
 
-    // If multibrand search has more than 5 help centers or categories collapse the list
-    const multibrandFilterLists = document.querySelectorAll(
-      ".multibrand-filter-list"
-    );
-    multibrandFilterLists.forEach((filter) => {
-      if (filter.children.length > 6) {
-        // Display the show more button
-        const trigger = filter.querySelector(".see-all-filters");
-        trigger.setAttribute("aria-hidden", false);
+  const current = getCurrentHcLocale();
+  const locales = await getSupportedLocalesAsync();
 
-        // Add event handler for click
-        trigger.addEventListener("click", (event) => {
-          event.stopPropagation();
-          trigger.parentNode.removeChild(trigger);
-          filter.classList.remove("multibrand-filter-list--collapsed");
-        });
-      }
+  const modal = document.createElement('div');
+  modal.id = 'lang-modal';
+  modal.className =
+    'fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity';
+  modal.style.opacity = '0';
+
+  const panel = document.createElement('div');
+  panel.className =
+    'lang-panel w-full max-w-[520px] mx-4 bg-white rounded-2xl shadow-xl transform transition-all';
+  panel.style.opacity = '0';
+  panel.style.transform = 'scale(0.96)';
+
+  panel.innerHTML = `
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-semibold">语言</h3>
+      <button id="lang-modal-close" class="p-2 text-gray-400 hover:text-gray-600" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+      </button>
+    </div>
+    <div class="px-5 py-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        ${locales
+          .map((loc) => {
+            const active = loc === current;
+            return `
+              <button class="lang-pill px-4 py-4 rounded-xl border ${
+                active ? 'bg-emerald-50 border-emerald-300 text-gray-900' : 'border-gray-200'
+              } text-left" data-locale="${loc}">
+                ${prettyName(loc)}
+              </button>`;
+          })
+          .join('')}
+      </div>
+    </div>
+  `;
+
+  modal.appendChild(panel);
+  document.body.appendChild(modal);
+
+  // 打开动画
+  requestAnimationFrame(() => {
+    modal.style.opacity = '1';
+    panel.style.opacity = '1';
+    panel.style.transform = 'scale(1)';
+  });
+
+  // 点击选项
+  panel.querySelectorAll('.lang-pill').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = btn.getAttribute('data-locale');
+      if (target && target !== current) switchLanguage(target);
     });
   });
 
-  const isPrintableChar = (str) => {
-    return str.length === 1 && str.match(/^\S$/);
+  // 关闭
+  const close = () => {
+    panel.style.opacity = '0';
+    panel.style.transform = 'scale(0.96)';
+    modal.style.opacity = '0';
+    setTimeout(() => modal.remove(), 180);
   };
+  panel.querySelector('#lang-modal-close')?.addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); }, { once: true });
+}
 
-  function Dropdown(toggle, menu) {
-    this.toggle = toggle;
-    this.menu = menu;
+/* ========= 其它功能 ========= */
+ready(() => {
+  // 语言按钮触发
+  const langTriggers = [
+    document.getElementById('lang-switcher'),
+    document.getElementById('lang-toggle'),
+    document.getElementById('mobile-lang-toggle')
+  ].filter(Boolean);
+  langTriggers.forEach((btn) =>
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openLangModal();
+    })
+  );
 
-    this.menuPlacement = {
-      top: menu.classList.contains("dropdown-menu-top"),
-      end: menu.classList.contains("dropdown-menu-end"),
-    };
-
-    this.toggle.addEventListener("click", this.clickHandler.bind(this));
-    this.toggle.addEventListener("keydown", this.toggleKeyHandler.bind(this));
-    this.menu.addEventListener("keydown", this.menuKeyHandler.bind(this));
-    document.body.addEventListener("click", this.outsideClickHandler.bind(this));
-
-    const toggleId = this.toggle.getAttribute("id") || crypto.randomUUID();
-    const menuId = this.menu.getAttribute("id") || crypto.randomUUID();
-
-    this.toggle.setAttribute("id", toggleId);
-    this.menu.setAttribute("id", menuId);
-
-    this.toggle.setAttribute("aria-controls", menuId);
-    this.menu.setAttribute("aria-labelledby", toggleId);
-
-    this.menu.setAttribute("tabindex", -1);
-    this.menuItems.forEach((menuItem) => {
-      menuItem.tabIndex = -1;
-    });
-
-    this.focusedIndex = -1;
-  }
-
-  Dropdown.prototype = {
-    get isExpanded() {
-      return this.toggle.getAttribute("aria-expanded") === "true";
-    },
-
-    get menuItems() {
-      return Array.prototype.slice.call(
-        this.menu.querySelectorAll("[role='menuitem'], [role='menuitemradio']")
-      );
-    },
-
-    dismiss: function () {
-      if (!this.isExpanded) return;
-
-      this.toggle.removeAttribute("aria-expanded");
-      this.menu.classList.remove("dropdown-menu-end", "dropdown-menu-top");
-      this.focusedIndex = -1;
-    },
-
-    open: function () {
-      if (this.isExpanded) return;
-
-      this.toggle.setAttribute("aria-expanded", true);
-      this.handleOverflow();
-    },
-
-    handleOverflow: function () {
-      var rect = this.menu.getBoundingClientRect();
-
-      var overflow = {
-        right: rect.left < 0 || rect.left + rect.width > window.innerWidth,
-        bottom: rect.top < 0 || rect.top + rect.height > window.innerHeight,
-      };
-
-      if (overflow.right || this.menuPlacement.end) {
-        this.menu.classList.add("dropdown-menu-end");
-      }
-
-      if (overflow.bottom || this.menuPlacement.top) {
-        this.menu.classList.add("dropdown-menu-top");
-      }
-
-      if (this.menu.getBoundingClientRect().top < 0) {
-        this.menu.classList.remove("dropdown-menu-top");
-      }
-    },
-
-    focusByIndex: function (index) {
-      if (!this.menuItems.length) return;
-
-      this.menuItems.forEach((item, itemIndex) => {
-        if (itemIndex === index) {
-          item.tabIndex = 0;
-          item.focus();
-        } else {
-          item.tabIndex = -1;
-        }
-      });
-
-      this.focusedIndex = index;
-    },
-
-    focusFirstMenuItem: function () {
-      this.focusByIndex(0);
-    },
-
-    focusLastMenuItem: function () {
-      this.focusByIndex(this.menuItems.length - 1);
-    },
-
-    focusNextMenuItem: function (currentItem) {
-      if (!this.menuItems.length) return;
-
-      const currentIndex = this.menuItems.indexOf(currentItem);
-      const nextIndex = (currentIndex + 1) % this.menuItems.length;
-
-      this.focusByIndex(nextIndex);
-    },
-
-    focusPreviousMenuItem: function (currentItem) {
-      if (!this.menuItems.length) return;
-
-      const currentIndex = this.menuItems.indexOf(currentItem);
-      const previousIndex =
-        currentIndex <= 0 ? this.menuItems.length - 1 : currentIndex - 1;
-
-      this.focusByIndex(previousIndex);
-    },
-
-    focusByChar: function (currentItem, char) {
-      char = char.toLowerCase();
-
-      const itemChars = this.menuItems.map((menuItem) =>
-        menuItem.textContent.trim()[0].toLowerCase()
-      );
-
-      const startIndex =
-        (this.menuItems.indexOf(currentItem) + 1) % this.menuItems.length;
-
-      // look up starting from current index
-      let index = itemChars.indexOf(char, startIndex);
-
-      // if not found, start from start
-      if (index === -1) {
-        index = itemChars.indexOf(char, 0);
-      }
-
-      if (index > -1) {
-        this.focusByIndex(index);
-      }
-    },
-
-    outsideClickHandler: function (e) {
-      if (
-        this.isExpanded &&
-        !this.toggle.contains(e.target) &&
-        !e.composedPath().includes(this.menu)
-      ) {
-        this.dismiss();
-        this.toggle.focus();
-      }
-    },
-
-    clickHandler: function (event) {
-      event.stopPropagation();
-      event.preventDefault();
-
-      if (this.isExpanded) {
-        this.dismiss();
-        this.toggle.focus();
+  // 手风琴
+  document.querySelectorAll('.accordion-header').forEach((header) => {
+    header.addEventListener('click', () => {
+      const content = header.nextElementSibling;
+      if (content.style.maxHeight) {
+        content.style.maxHeight = null;
+        header.classList.remove('active');
       } else {
-        this.open();
-        this.focusFirstMenuItem();
-      }
-    },
-
-    toggleKeyHandler: function (e) {
-      const key = e.key;
-
-      switch (key) {
-        case "Enter":
-        case " ":
-        case "ArrowDown":
-        case "Down": {
-          e.stopPropagation();
-          e.preventDefault();
-
-          this.open();
-          this.focusFirstMenuItem();
-          break;
-        }
-        case "ArrowUp":
-        case "Up": {
-          e.stopPropagation();
-          e.preventDefault();
-
-          this.open();
-          this.focusLastMenuItem();
-          break;
-        }
-        case "Esc":
-        case "Escape": {
-          e.stopPropagation();
-          e.preventDefault();
-
-          this.dismiss();
-          this.toggle.focus();
-          break;
-        }
-      }
-    },
-
-    menuKeyHandler: function (e) {
-      const key = e.key;
-      const currentElement = this.menuItems[this.focusedIndex];
-
-      if (e.ctrlKey || e.altKey || e.metaKey) {
-        return;
-      }
-
-      switch (key) {
-        case "Esc":
-        case "Escape": {
-          e.stopPropagation();
-          e.preventDefault();
-
-          this.dismiss();
-          this.toggle.focus();
-          break;
-        }
-        case "ArrowDown":
-        case "Down": {
-          e.stopPropagation();
-          e.preventDefault();
-
-          this.focusNextMenuItem(currentElement);
-          break;
-        }
-        case "ArrowUp":
-        case "Up": {
-          e.stopPropagation();
-          e.preventDefault();
-          this.focusPreviousMenuItem(currentElement);
-          break;
-        }
-        case "Home":
-        case "PageUp": {
-          e.stopPropagation();
-          e.preventDefault();
-          this.focusFirstMenuItem();
-          break;
-        }
-        case "End":
-        case "PageDown": {
-          e.stopPropagation();
-          e.preventDefault();
-          this.focusLastMenuItem();
-          break;
-        }
-        case "Tab": {
-          if (e.shiftKey) {
-            e.stopPropagation();
-            e.preventDefault();
-            this.dismiss();
-            this.toggle.focus();
-          } else {
-            this.dismiss();
-          }
-          break;
-        }
-        default: {
-          if (isPrintableChar(key)) {
-            e.stopPropagation();
-            e.preventDefault();
-            this.focusByChar(currentElement, key);
-          }
-        }
-      }
-    },
-  };
-
-  // Drodowns
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const dropdowns = [];
-    const dropdownToggles = document.querySelectorAll(".dropdown-toggle");
-
-    dropdownToggles.forEach((toggle) => {
-      const menu = toggle.nextElementSibling;
-      if (menu && menu.classList.contains("dropdown-menu")) {
-        dropdowns.push(new Dropdown(toggle, menu));
+        document.querySelectorAll('.accordion-content').forEach((el) => (el.style.maxHeight = null));
+        document.querySelectorAll('.accordion-header').forEach((el) => el.classList.remove('active'));
+        content.style.maxHeight = content.scrollHeight + 'px';
+        header.classList.add('active');
       }
     });
   });
 
-  // Share
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const links = document.querySelectorAll(".share a");
-    links.forEach((anchor) => {
-      anchor.addEventListener("click", (event) => {
-        event.preventDefault();
-        window.open(anchor.href, "", "height = 500, width = 500");
-      });
+  // 搜索框 Enter 提交
+  const searchInput = document.querySelector('input[type="search"]');
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchInput.closest('form')?.submit();
+      }
     });
-  });
-
-  // Vanilla JS debounce function, by Josh W. Comeau:
-  // https://www.joshwcomeau.com/snippets/javascript/debounce/
-  function debounce(callback, wait) {
-    let timeoutId = null;
-    return (...args) => {
-      window.clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
-        callback.apply(null, args);
-      }, wait);
-    };
   }
 
-  // Define variables for search field
-  let searchFormFilledClassName = "search-has-value";
-  let searchFormSelector = "form[role='search']";
-
-  // Clear the search input, and then return focus to it
-  function clearSearchInput(event) {
-    event.target
-      .closest(searchFormSelector)
-      .classList.remove(searchFormFilledClassName);
-
-    let input;
-    if (event.target.tagName === "INPUT") {
-      input = event.target;
-    } else if (event.target.tagName === "BUTTON") {
-      input = event.target.previousElementSibling;
-    } else {
-      input = event.target.closest("button").previousElementSibling;
-    }
-    input.value = "";
-    input.focus();
-  }
-
-  // Have the search input and clear button respond
-  // when someone presses the escape key, per:
-  // https://twitter.com/adambsilver/status/1152452833234554880
-  function clearSearchInputOnKeypress(event) {
-    const searchInputDeleteKeys = ["Delete", "Escape"];
-    if (searchInputDeleteKeys.includes(event.key)) {
-      clearSearchInput(event);
-    }
-  }
-
-  // Create an HTML button that all users -- especially keyboard users --
-  // can interact with, to clear the search input.
-  // To learn more about this, see:
-  // https://adrianroselli.com/2019/07/ignore-typesearch.html#Delete
-  // https://www.scottohara.me/blog/2022/02/19/custom-clear-buttons.html
-  function buildClearSearchButton(inputId) {
-    const button = document.createElement("button");
-    button.setAttribute("type", "button");
-    button.setAttribute("aria-controls", inputId);
-    button.classList.add("clear-button");
-    const buttonLabel = window.searchClearButtonLabelLocalized;
-    const icon = `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' focusable='false' role='img' viewBox='0 0 12 12' aria-label='${buttonLabel}'><path stroke='currentColor' stroke-linecap='round' stroke-width='2' d='M3 9l6-6m0 6L3 3'/></svg>`;
-    button.innerHTML = icon;
-    button.addEventListener("click", clearSearchInput);
-    button.addEventListener("keyup", clearSearchInputOnKeypress);
-    return button;
-  }
-
-  // Append the clear button to the search form
-  function appendClearSearchButton(input, form) {
-    const searchClearButton = buildClearSearchButton(input.id);
-    form.append(searchClearButton);
-    if (input.value.length > 0) {
-      form.classList.add(searchFormFilledClassName);
-    }
-  }
-
-  // Add a class to the search form when the input has a value;
-  // Remove that class from the search form when the input doesn't have a value.
-  // Do this on a delay, rather than on every keystroke.
-  const toggleClearSearchButtonAvailability = debounce((event) => {
-    const form = event.target.closest(searchFormSelector);
-    form.classList.toggle(
-      searchFormFilledClassName,
-      event.target.value.length > 0
-    );
-  }, 200);
-
-  // Search
-
-  window.addEventListener("DOMContentLoaded", () => {
-    // Set up clear functionality for the search field
-    const searchForms = [...document.querySelectorAll(searchFormSelector)];
-    const searchInputs = searchForms.map((form) =>
-      form.querySelector("input[type='search']")
-    );
-    searchInputs.forEach((input) => {
-      appendClearSearchButton(input, input.closest(searchFormSelector));
-      input.addEventListener("keyup", clearSearchInputOnKeypress);
-      input.addEventListener("keyup", toggleClearSearchButtonAvailability);
+  // 表单提交加载状态
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', () => {
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+          '<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>';
+      }
     });
-  });
-
-  const key = "returnFocusTo";
-
-  function saveFocus() {
-    const activeElementId = document.activeElement.getAttribute("id");
-    sessionStorage.setItem(key, "#" + activeElementId);
   }
 
-  function returnFocus() {
-    const returnFocusTo = sessionStorage.getItem(key);
-    if (returnFocusTo) {
-      sessionStorage.removeItem("returnFocusTo");
-      const returnFocusToEl = document.querySelector(returnFocusTo);
-      returnFocusToEl && returnFocusToEl.focus && returnFocusToEl.focus();
-    }
-  }
-
-  // Forms
-
-  window.addEventListener("DOMContentLoaded", () => {
-    // In some cases we should preserve focus after page reload
-    returnFocus();
-
-    // show form controls when the textarea receives focus or back button is used and value exists
-    const commentContainerTextarea = document.querySelector(
-      ".comment-container textarea"
-    );
-    const commentContainerFormControls = document.querySelector(
-      ".comment-form-controls, .comment-ccs"
-    );
-
-    if (commentContainerTextarea) {
-      commentContainerTextarea.addEventListener(
-        "focus",
-        function focusCommentContainerTextarea() {
-          commentContainerFormControls.style.display = "block";
-          commentContainerTextarea.removeEventListener(
-            "focus",
-            focusCommentContainerTextarea
-          );
-        }
-      );
-
-      if (commentContainerTextarea.value !== "") {
-        commentContainerFormControls.style.display = "block";
-      }
-    }
-
-    // Expand Request comment form when Add to conversation is clicked
-    const showRequestCommentContainerTrigger = document.querySelector(
-      ".request-container .comment-container .comment-show-container"
-    );
-    const requestCommentFields = document.querySelectorAll(
-      ".request-container .comment-container .comment-fields"
-    );
-    const requestCommentSubmit = document.querySelector(
-      ".request-container .comment-container .request-submit-comment"
-    );
-
-    if (showRequestCommentContainerTrigger) {
-      showRequestCommentContainerTrigger.addEventListener("click", () => {
-        showRequestCommentContainerTrigger.style.display = "none";
-        Array.prototype.forEach.call(requestCommentFields, (element) => {
-          element.style.display = "block";
-        });
-        requestCommentSubmit.style.display = "inline-block";
-
-        if (commentContainerTextarea) {
-          commentContainerTextarea.focus();
-        }
-      });
-    }
-
-    // Mark as solved button
-    const requestMarkAsSolvedButton = document.querySelector(
-      ".request-container .mark-as-solved:not([data-disabled])"
-    );
-    const requestMarkAsSolvedCheckbox = document.querySelector(
-      ".request-container .comment-container input[type=checkbox]"
-    );
-    const requestCommentSubmitButton = document.querySelector(
-      ".request-container .comment-container input[type=submit]"
-    );
-
-    if (requestMarkAsSolvedButton) {
-      requestMarkAsSolvedButton.addEventListener("click", () => {
-        requestMarkAsSolvedCheckbox.setAttribute("checked", true);
-        requestCommentSubmitButton.disabled = true;
-        requestMarkAsSolvedButton.setAttribute("data-disabled", true);
-        requestMarkAsSolvedButton.form.submit();
-      });
-    }
-
-    // Change Mark as solved text according to whether comment is filled
-    const requestCommentTextarea = document.querySelector(
-      ".request-container .comment-container textarea"
-    );
-
-    const usesWysiwyg =
-      requestCommentTextarea &&
-      requestCommentTextarea.dataset.helper === "wysiwyg";
-
-    function isEmptyPlaintext(s) {
-      return s.trim() === "";
-    }
-
-    function isEmptyHtml(xml) {
-      const doc = new DOMParser().parseFromString(`<_>${xml}</_>`, "text/xml");
-      const img = doc.querySelector("img");
-      return img === null && isEmptyPlaintext(doc.children[0].textContent);
-    }
-
-    const isEmpty = usesWysiwyg ? isEmptyHtml : isEmptyPlaintext;
-
-    if (requestCommentTextarea) {
-      requestCommentTextarea.addEventListener("input", () => {
-        if (isEmpty(requestCommentTextarea.value)) {
-          if (requestMarkAsSolvedButton) {
-            requestMarkAsSolvedButton.innerText =
-              requestMarkAsSolvedButton.getAttribute("data-solve-translation");
-          }
-        } else {
-          if (requestMarkAsSolvedButton) {
-            requestMarkAsSolvedButton.innerText =
-              requestMarkAsSolvedButton.getAttribute(
-                "data-solve-and-submit-translation"
-              );
-          }
-        }
-      });
-    }
-
-    const selects = document.querySelectorAll(
-      "#request-status-select, #request-organization-select"
-    );
-
-    selects.forEach((element) => {
-      element.addEventListener("change", (event) => {
-        event.stopPropagation();
-        saveFocus();
-        element.form.submit();
-      });
+  // 移动端菜单
+  const mobileMenuBtn = document.querySelector('#mobile-menu-button');
+  const mobileMenu = document.querySelector('#mobile-menu');
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
     });
-
-    // Submit requests filter form on search in the request list page
-    const quickSearch = document.querySelector("#quick-search");
-    if (quickSearch) {
-      quickSearch.addEventListener("keyup", (event) => {
-        if (event.keyCode === ENTER) {
-          event.stopPropagation();
-          saveFocus();
-          quickSearch.form.submit();
-        }
-      });
-    }
-
-    // Submit organization form in the request page
-    const requestOrganisationSelect = document.querySelector(
-      "#request-organization select"
-    );
-
-    if (requestOrganisationSelect) {
-      requestOrganisationSelect.addEventListener("change", () => {
-        requestOrganisationSelect.form.submit();
-      });
-
-      requestOrganisationSelect.addEventListener("click", (e) => {
-        // Prevents Ticket details collapsible-sidebar to close on mobile
-        e.stopPropagation();
-      });
-    }
-
-    // If there are any error notifications below an input field, focus that field
-    const notificationElm = document.querySelector(".notification-error");
-    if (
-      notificationElm &&
-      notificationElm.previousElementSibling &&
-      typeof notificationElm.previousElementSibling.focus === "function"
-    ) {
-      notificationElm.previousElementSibling.focus();
-    }
-
-    // Service Carousel functionality
-    const carouselWrapper = document.querySelector('.service-carousel-wrapper');
-    const carouselSlides = document.querySelectorAll('.service-carousel-slide');
-    const prevButton = document.querySelector('#carousel-prev');
-    const nextButton = document.querySelector('#carousel-next');
-    const indicators = document.querySelectorAll('.carousel-indicator');
-    
-    if (carouselWrapper && carouselSlides.length) {
-      let currentSlide = 0;
-      const totalSlides = carouselSlides.length;
-      let autoCarouselInterval = null;
-      let userInteractionTimeout = null;
-      
-      function updateCarousel() {
-        const translateX = -currentSlide * 100;
-        carouselWrapper.style.transform = `translateX(${translateX}%)`;
-        
-        // Update indicators - 切换横线的颜色
-        indicators.forEach((indicator, index) => {
-          if (index === currentSlide) {
-            indicator.classList.remove('bg-gray-300');
-            indicator.classList.add('bg-gray-800');
-          } else {
-            indicator.classList.remove('bg-gray-800');
-            indicator.classList.add('bg-gray-300');
-          }
-        });
-      }
-      
-      // Auto-carousel function - switch between page 1 and 2
-      function autoNextSlide() {
-        // Auto-carousel: switch between page 0 and 1 only
-        currentSlide = currentSlide === 0 ? 1 : 0;
-        updateCarousel();
-      }
-      
-      // Manual navigation functions - switch between page 1 and 2
-      function manualNextSlide() {
-        // Manual clicking: switch between page 0 and 1
-        currentSlide = currentSlide === 0 ? 1 : 0;
-        updateCarousel();
-        handleUserInteraction();
-      }
-      
-      function manualPrevSlide() {
-        // Manual clicking: switch between page 0 and 1
-        currentSlide = currentSlide === 0 ? 1 : 0;
-        updateCarousel();
-        handleUserInteraction();
-      }
-      
-      // Handle user interaction - pause auto-carousel and set resume timeout
-      function handleUserInteraction() {
-        // Stop auto-carousel
-        if (autoCarouselInterval) {
-          clearInterval(autoCarouselInterval);
-          autoCarouselInterval = null;
-        }
-        
-        // Clear existing timeout
-        if (userInteractionTimeout) {
-          clearTimeout(userInteractionTimeout);
-        }
-        
-        // Set timeout to resume auto-carousel after 5 seconds of no interaction
-        userInteractionTimeout = setTimeout(() => {
-          startAutoCarousel();
-        }, 5000);
-      }
-      
-      // Start auto-carousel
-      function startAutoCarousel() {
-        if (!autoCarouselInterval) {
-          autoCarouselInterval = setInterval(autoNextSlide, 3000); // Change slide every 3 seconds
-        }
-      }
-      
-      // Stop auto-carousel
-      function stopAutoCarousel() {
-        if (autoCarouselInterval) {
-          clearInterval(autoCarouselInterval);
-          autoCarouselInterval = null;
-        }
-      }
-      
-      // Event listeners for manual navigation
-      if (nextButton) {
-        nextButton.addEventListener('click', manualNextSlide);
-      }
-      
-      if (prevButton) {
-        prevButton.addEventListener('click', manualPrevSlide);
-      }
-      
-      // Indicator click handlers
-      indicators.forEach((indicator, index) => {
-        indicator.addEventListener('click', () => {
-          currentSlide = index;
-          updateCarousel();
-          handleUserInteraction();
-        });
-      });
-      
-      // Pause auto-carousel on hover
-      if (carouselWrapper) {
-        carouselWrapper.addEventListener('mouseenter', () => {
-          stopAutoCarousel();
-        });
-        
-        carouselWrapper.addEventListener('mouseleave', () => {
-          startAutoCarousel();
-        });
-      }
-      
-      // Initialize carousel
-      updateCarousel();
-      
-      // Start auto-carousel
-      startAutoCarousel();
-    }
-  });
-
-})();
+  }
+});
