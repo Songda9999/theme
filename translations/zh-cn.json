@@ -74,3 +74,21 @@
   "visited_link_color_description": "已访问链接元素的文本颜色",
   "visited_link_color_label": "已访问链接颜色"
 }
+{
+  "nav": {
+    "market": "市场行情",
+    "spot": "现货交易",
+    "spot_basic": "币币交易",
+    "spot_margin": "杠杆交易",
+    "spot_grid": "网格交易",
+    "futures": "合约交易",
+    "c2c": "C2C 交易",
+    "c2c_normal": "普通交易",
+    "c2c_ad": "发布广告",
+    "c2c_merchant": "申请商户",
+    "finance": "金融理财",
+    "byb": "BYB 专区",
+    "loan": "抵押借贷",
+    "switch_lang": "切换语言"
+  }
+}
