@@ -73,21 +73,18 @@
   "text_font_label": "Text Font",
   "visited_link_color_description": "Text color for visited link elements",
   "visited_link_color_label": "Visited link color",
-
-  "nav": {
-    "market": "Markets",
-    "spot": "Spot",
-    "spot_basic": "Spot Trading",
-    "spot_margin": "Margin Trading",
-    "spot_grid": "Grid Trading",
-    "futures": "Futures",
-    "c2c": "C2C",
-    "c2c_normal": "Classic",
-    "c2c_ad": "Post Ad",
-    "c2c_merchant": "Apply Merchant",
-    "finance": "Earn",
-    "byb": "BYB Zone",
-    "loan": "Crypto Loans",
-    "switch_lang": "Switch language"
-  }
+  "nav.market": "Markets",
+  "nav.spot": "Spot",
+  "nav.spot_basic": "Spot Trading",
+  "nav.spot_margin": "Margin Trading",
+  "nav.spot_grid": "Grid Trading",
+  "nav.futures": "Futures",
+  "nav.c2c": "C2C",
+  "nav.c2c_normal": "Classic",
+  "nav.c2c_ad": "Post Ad",
+  "nav.c2c_merchant": "Apply Merchant",
+  "nav.finance": "Earn",
+  "nav.byb": "BYB Zone",
+  "nav.loan": "Crypto Loans",
+  "nav.switch_lang": "Switch language"
 }
