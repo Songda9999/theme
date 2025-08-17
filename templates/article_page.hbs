@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帮助中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Tailwind Config */
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand': '#00cfb6',
+                        'brand-light': '#e6f9f7',
+                        'brand-dark': '#00a692',
+                        'text-primary': '#1E2329',
+                        'text-secondary': '#707A8A',
+                        'medium-gray': '#EAECEF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans SC', 'sans-serif'],
+                    },
+                }
+            }
+        }
+
+        /* Global & Shared Styles */
+        html { font-family: 'Inter', 'Noto Sans SC', 'sans-serif'; }
+        body { background-color: #FFFFFF; color: #1E2329; }
+        .content-hidden { display: none; }
+        a:not(.prose a):not([class*="submenu-article-link"]):hover { color: #00cfb6; }
+
+        /* Article Page Specific Styles */
+        .sidebar-nav-item { transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; cursor: pointer; border-radius: 4px; }
+        .sidebar-nav-item.active { background-color: #FAFAFA; color: #1E2329; font-weight: 600; }
+        .sidebar-nav-item:hover { background-color: #F5F5F5; }
+        .prose { color: #1E2329; max-width: none; } /* Ensure prose takes full width of its container */
+        .prose h1, .prose h2, .prose h3, .prose h4 { font-weight: 600; margin-bottom: 0.75em; margin-top: 1.5em;}
+        .prose p { line-height: 1.8; margin-bottom: 1.25em; }
+        .prose a { color: #00cfb6; text-decoration: underline; font-weight: 500; }
+        .prose a:hover { color: #00a692; }
+        .prose strong { font-weight: 600; }
+        .prose img { display: block; max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1.5rem auto; cursor: zoom-in; }
+        .prose video { display: block; max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1.5rem auto; }
+        .prose ul, .prose ol { padding-left: 1.5rem; margin-bottom: 1.25rem; }
+        .prose li { margin-bottom: 0.5em; }
+        .prose li::marker { color: #707A8A; }
+        .submenu-articles { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out; }
+        .submenu-articles.open { max-height: 1000px; }
+        .chevron-icon { transition: transform 0.3s ease-in-out; }
+        .sidebar-nav-item.active .chevron-icon { transform: rotate(180deg); }
+        .submenu-article-link.active { color: #00cfb6; font-weight: 500; }
+        
+        /* Custom focus styles for search inputs */
+        input[type="search"]:focus {
+            outline: none;
+            --tw-ring-color: #00cfb6;
+            box-shadow: var(--tw-ring-inset, /*!*/ /*!*/) 0 0 0 calc(1px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color);
+            border-color: #00cfb6;
+        }
+    </style>
+</head>
+<body class="font-sans">
+
+    <!-- Main Content Area -->
+    <main class="bg-white">
+        <div id="page-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+             <div class="flex flex-col lg:flex-row items-start gap-8">
+                <aside class="lg:w-1/6 hidden lg:block">
+                    <div class="sticky top-24">
+                        <a href="主页.html" class="flex items-center space-x-2 text-sm text-text-secondary mb-6 hover:text-text-primary">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                            <span>返回帮助中心</span>
+                        </a>
+                        <nav id="detail-sidebar" class="space-y-1"></nav>
+                    </div>
+                </aside>
+                <div id="detail-main-content" class="w-full lg:w-2/3 min-h-screen">
+                     <div class="text-center py-20">
+                        <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-brand"></div>
+                        <p class="text-gray-500 mt-4">正在加载内容...</p>
+                    </div>
+                </div>
+                <aside class="w-full lg:w-1/6 mt-12 lg:mt-0">
+                     <div class="sticky top-24 space-y-8">
+                         <div>
+                            <div class="relative mb-4">
+                                <input type="search" id="sidebar-search" placeholder="搜索" class="w-full pl-10 pr-4 py-2 border border-medium-gray rounded-md text-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                            </div>
+                            <h2 class="text-base font-semibold text-text-primary mb-4">相关文章</h2>
+                            <div id="related-articles-container" class="space-y-4"></div>
+                        </div>
+                         <div>
+                            <h2 class="text-base font-semibold text-text-primary mb-4">热门加密货币</h2>
+                            <div id="crypto-container" class="space-y-2"></div>
+                             <div class="flex justify-end mt-4">
+                                <a href="#" class="inline-flex items-center gap-1 text-sm font-semibold text-gray-600">
+                                    <span>查看更多行情</span>
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- ARTICLE PAGE SPECIFIC LOGIC ---
+        (() => {
+            const ZENDESK_CONFIG = {
+                'zh-CN': {
+                    SUBDOMAIN: '100ex',
+                    LOCALE: 'zh-cn',
+                    CATEGORY_ID: '45495601653401',
+                    DEFAULT_ARTICLE_ID: '46056201877529'
+                }
+            };
+            
+            const proxyUrl = 'https://corsproxy.io/?';
+            let zendeskDataCache = {};
+            const elements = {
+                pageContainer: document.getElementById('page-container'),
+                detailSidebar: document.getElementById('detail-sidebar'),
+                detailMainContent: document.getElementById('detail-main-content'),
+                relatedArticlesContainer: document.getElementById('related-articles-container'),
+                cryptoContainer: document.getElementById('crypto-container'), // Re-added crypto container
+                sidebarSearch: document.getElementById('sidebar-search')
+            };
+
+            if (!elements.pageContainer) return;
+            
+            async function fetchData(endpoint) {
+                const config = ZENDESK_CONFIG['zh-CN']; // Hardcoded to Chinese
+                const baseUrl = `${proxyUrl}https://${config.SUBDOMAIN}.zendesk.com/api/v2/help_center/${config.LOCALE}`;
+                const fullUrl = `${baseUrl}/${endpoint}`;
+                
+                if (zendeskDataCache[fullUrl]) return zendeskDataCache[fullUrl];
+
+                try {
+                    const response = await fetch(fullUrl);
+                    if (!response.ok) throw new Error(`API Error ${response.status} for ${endpoint}`);
+                    const data = await response.json();
+                    zendeskDataCache[fullUrl] = data;
+                    return data;
+                } catch (error) {
+                    console.error(`Fetch error for ${fullUrl}:`, error);
+                    throw error; // Re-throw the error to be caught by the caller
+                }
+            }
+            
+            async function loadArticleContent(articleId, updateHistory = true) {
+                try {
+                    elements.detailMainContent.innerHTML = `<div class="text-center py-20"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div></div>`;
+                    const { article } = await fetchData(`articles/${articleId}.json`);
+                    if (!article) throw new Error("Article not found.");
+                    document.title = article.title;
+                    renderDetailContent(article);
+                    if(updateHistory) history.pushState({ articleId: article.id }, article.title, `?article=${article.id}`);
+                    highlightActiveArticle(article.id);
+                } catch (error) {
+                     elements.detailMainContent.innerHTML = `<p class="text-red-500">无法加载文章内容: ${error.message}</p>`;
+                }
+            }
+
+            async function initializePage() {
+                const config = ZENDESK_CONFIG['zh-CN']; // Hardcoded to Chinese
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const initialArticleId = urlParams.get('article') || config.DEFAULT_ARTICLE_ID;
+
+                try {
+                    const [categoryResponse, sectionsResponse] = await Promise.all([
+                        fetchData(`categories/${config.CATEGORY_ID}.json`),
+                        fetchData(`categories/${config.CATEGORY_ID}/sections.json`)
+                    ]);
+                    
+                    zendeskDataCache.category = categoryResponse.category;
+                    zendeskDataCache.sections = sectionsResponse.sections;
+                    
+                    const relatedArticles = (await fetchData(`categories/${config.CATEGORY_ID}/articles.json?per_page=100`)).articles;
+                    zendeskDataCache.relatedArticles = relatedArticles;
+
+                    renderDetailSidebar(zendeskDataCache.sections);
+                    renderRelatedArticles(relatedArticles, initialArticleId);
+                    
+                    if (initialArticleId) {
+                        await loadArticleContent(initialArticleId, false);
+                        const articleData = await fetchData(`articles/${initialArticleId}.json`);
+                        const initialArticleSectionId = articleData?.article?.section_id;
+                        const activeSectionContainer = elements.detailSidebar.querySelector(`.sidebar-nav-item[data-section-id="${initialArticleSectionId}"]`);
+                        if(activeSectionContainer) await toggleSubmenu(activeSectionContainer);
+                    } else {
+                        elements.detailMainContent.innerHTML = `<p class="p-4 text-gray-600">请选择一篇文章。</p>`;
+                    }
+
+                } catch (error) {
+                    elements.detailMainContent.innerHTML = `<p class="text-red-500">无法加载页面: ${error.message}</p>`;
+                }
+            }
+
+            function renderDetailContent(article) {
+                elements.detailMainContent.innerHTML = `
+                    <nav class="text-sm text-text-secondary mb-4 flex items-center space-x-2 flex-wrap">
+                        <a href="主页.html" class="hover:text-brand">帮助中心</a> <span class="text-gray-300">/</span>
+                        <a href="#" class="hover:text-brand">${zendeskDataCache.category.name}</a> <span class="text-gray-300">/</span>
+                        <span class="text-text-primary font-medium">${article.title}</span>
+                    </nav>
+
+                    <div class="article-container">
+                        <h1 class="text-3xl font-semibold text-text-primary mb-3">${article.title}</h1>
+                        <p class="text-sm text-text-secondary mb-8">发布于 ${new Date(article.created_at).toLocaleDateString()}</p>
+                        <div class="prose">${article.body}</div>
+                    </div>`;
+                
+                // New logic to handle image grouping
+                const proseContainer = elements.detailMainContent.querySelector('.prose');
+                if (proseContainer) {
+                    const paragraphs = Array.from(proseContainer.querySelectorAll('p'));
+                    
+                    for (let i = 0; i < paragraphs.length; i++) {
+                        const p1 = paragraphs[i];
+                        const isP1ImageOnly = p1.children.length === 1 && p1.children[0].tagName === 'IMG' && p1.innerText.trim() === '';
+                        
+                        if (isP1ImageOnly) {
+                            let imageGroup = [p1];
+                            for (let j = i + 1; j < paragraphs.length; j++) {
+                                const p2 = paragraphs[j];
+                                const isP2ImageOnly = p2.children.length === 1 && p2.children[0].tagName === 'IMG' && p2.innerText.trim() === '';
+                                if (isP2ImageOnly) {
+                                    imageGroup.push(p2);
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            if (imageGroup.length >= 2) {
+                                const wrapper = document.createElement('div');
+                                wrapper.style.display = 'flex';
+                                wrapper.style.flexWrap = 'wrap';
+                                wrapper.style.gap = '2%';
+                                wrapper.style.marginBottom = '1.25em';
+                                wrapper.style.justifyContent = 'center'; // Center the images
+
+                                imageGroup.forEach(p => {
+                                    const img = p.querySelector('img');
+                                    img.style.width = '48%';
+                                    img.style.margin = '0';
+                                    wrapper.appendChild(img);
+                                });
+
+                                proseContainer.replaceChild(wrapper, imageGroup[0]);
+                                
+                                for (let k = 1; k < imageGroup.length; k++) {
+                                    proseContainer.removeChild(imageGroup[k]);
+                                }
+
+                                i += imageGroup.length - 1;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            async function toggleSubmenu(button) {
+                const submenu = button.nextElementSibling;
+                if (!submenu) return;
+                const wasOpen = button.classList.contains('active');
+                
+                elements.detailSidebar.querySelectorAll('.sidebar-nav-item.active').forEach(b => {
+                    if (b !== button && b.nextElementSibling) {
+                        b.classList.remove('active');
+                        b.nextElementSibling.classList.remove('open');
+                    }
+                });
+
+                button.classList.toggle('active', !wasOpen);
+                submenu.classList.toggle('open', !wasOpen);
+
+                if (!wasOpen && submenu.innerHTML.trim() === "") { 
+                    submenu.innerHTML = `<div class="p-2 text-xs text-text-secondary">加载中...</div>`;
+                    try {
+                        const { articles } = await fetchData(`sections/${button.dataset.sectionId}/articles.json`);
+                        renderSubmenuArticles(submenu, articles);
+                        highlightActiveArticle();
+                    } catch (error) {
+                        submenu.innerHTML = `<div class="p-2 text-xs text-red-500">加载失败</div>`;
+                    }
+                }
+            }
+
+            function renderSubmenuArticles(submenu, articles) {
+                submenu.innerHTML = articles.map(article => `<a href="?article=${article.id}" data-article-id="${article.id}" class="submenu-article-link block text-sm text-text-secondary hover:text-brand py-1.5 px-2 rounded-sm">${article.title}</a>`).join('');
+                submenu.querySelectorAll('.submenu-article-link').forEach(link => {
+                    link.addEventListener('click', e => { e.preventDefault(); loadArticleContent(link.dataset.articleId); });
+                });
+            }
+
+            function highlightActiveArticle(articleId) {
+                const config = ZENDESK_CONFIG['zh-CN']; // Hardcoded to Chinese
+                const currentArticleId = articleId || new URLSearchParams(window.location.search).get('article') || config.DEFAULT_ARTICLE_ID;
+                elements.detailSidebar.querySelectorAll('.submenu-article-link').forEach(link => {
+                    link.classList.toggle('active', link.dataset.articleId == currentArticleId);
+                });
+            }
+
+            function renderDetailSidebar(sections) {
+                const ICONS = {
+                    '下载及注册指南': 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
+                    '账号与安全设置': 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
+                    '交易与记录': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+                    '充提币 / 转账': 'M8 7h8m-4-4v8m-4 4h8m-8-4h.01M12 2a10 10 0 110 20 10 10 0 010-20z',
+                    '其他问题': 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.755 4 3.92C16 13.09 14.828 14 12.805 14c-1.636 0-2.86-1.03-3.373-1.854l-.275-.422m-2.27,1.854a2.005,2.005,0,0,1,2.83,0L12,16.5l1.04-1.04a2,2,0,1,1,2.83,2.83L12,19.172l-3.87-3.87a2,2,0,0,1,0-2.83Z',
+                    '合约交易': 'M16 8v8m-4-5v5m-4-2v2M4 20h16a2 2 0 002-2V6a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z'
+                };
+                elements.detailSidebar.innerHTML = sections.map(section => `<div><button class="sidebar-nav-item flex items-center justify-between w-full p-2" data-section-id="${section.id}"><span class="flex items-center space-x-3"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${ICONS[section.name] || 'M9 12h6'}"></path></svg><span class="text-sm">${section.name}</span></span><svg class="w-4 h-4 chevron-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><div class="submenu-articles pl-10 pt-1 space-y-1"></div></div>`).join('');
+                elements.detailSidebar.querySelectorAll('.sidebar-nav-item').forEach(button => {
+                    button.addEventListener('click', e => toggleSubmenu(e.currentTarget));
+                });
+            }
+            
+            function renderRelatedArticles(articles, currentArticleId) {
+                if (!articles) {
+                    elements.relatedArticlesContainer.innerHTML = '';
+                    return;
+                }
+                elements.relatedArticlesContainer.innerHTML = articles.filter(a => a.id != currentArticleId).slice(0, 5).map(a => `<a href="?article=${a.id}" class="block text-sm text-text-secondary hover:text-brand">${a.title}</a>`).join('');
+            }
+            
+            function handleSearchEvent(e) {
+                if (zendeskDataCache.relatedArticles) {
+                    const filtered = zendeskDataCache.relatedArticles.filter(a => a.title.toLowerCase().includes(e.target.value.toLowerCase()));
+                    renderRelatedArticles(filtered, new URLSearchParams(window.location.search).get('article'));
+                }
+            }
+            
+            function initializeCryptoWidget() {
+                const coins = [
+                    { name: "Bitcoin", symbol: "BTC", pair: "btcusdt", logo: "https://dlbitex-pd.oss-cn-hongkong.aliyuncs.com/upload/20231109171037843.png" },
+                    { name: "Ethereum", symbol: "ETH", pair: "ethusdt", logo: "https://dlbitex-pd.oss-cn-hongkong.aliyuncs.com/upload/20231109171710865.png" },
+                    { name: "BYB", symbol: "BYB", pair: "bybusdt", logo: "https://dlbitex-pd.oss-cn-hongkong.aliyuncs.com/upload/20250617114025925.png" },
+                    { name: "BNB", symbol: "BNB", pair: "bnbusdt", logo: "https://dlbitex-pd.oss-cn-hongkong.aliyuncs.com/upload/20231109171111137.png" },
+                    { name: "Dogecoin", symbol: "DOGE", pair: "dogeusdt", logo: "https://dlbitex-pd.oss-cn-hongkong.aliyuncs.com/upload/20231109171418986.png" }
+                ];
+
+                elements.cryptoContainer.innerHTML = coins.map(coin => `<a href="#" class="flex items-center justify-between p-2 -mx-2 rounded-lg hover:bg-gray-50"><div class="flex items-center gap-3"><img src="${coin.logo}" class="w-8 h-8" alt="${coin.name} logo"><div><p class="font-semibold text-sm">${coin.name}</p><p class="text-xs text-gray-500">${coin.symbol}</p></div></div><div class="text-right"><p id="${coin.pair}-price" class="font-semibold text-sm">$0.00</p><p id="${coin.pair}-change" class="text-xs">0.00%</p></div></a>`).join('');
+
+                async function updatePrices() {
+                    const symbols = coins.map(coin => coin.pair).join(',');
+                    const apiUrl = `https://coin.sokdana2233.workers.dev/?symbols=${symbols}`;
+                    try {
+                        const response = await fetch(apiUrl);
+                        if (!response.ok) return;
+                        const { list: results } = await response.json();
+                        if (!Array.isArray(results)) return;
+
+                        coins.forEach(coin => {
+                            const data = results.find(r => r.symbol === coin.pair)?.raw?.data;
+                            if (data && data.last && data.rose) {
+                                const price = parseFloat(data.last).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                const change = parseFloat(data.rose) * 100;
+                                const isUp = change >= 0;
+                                const priceEl = document.getElementById(`${coin.pair}-price`);
+                                const changeEl = document.getElementById(`${coin.pair}-change`);
+                                if (priceEl) priceEl.innerText = `$${price}`;
+                                if (changeEl) {
+                                    changeEl.innerText = `${isUp ? '+' : ''}${change.toFixed(2)}%`;
+                                    changeEl.className = 'text-xs ' + (isUp ? 'text-green-500' : 'text-red-500');
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Failed to fetch crypto prices:', error);
+                    }
+                }
+
+                updatePrices();
+                setInterval(updatePrices, 5000);
+            }
+
+            // Initial Load
+            initializePage();
+            initializeCryptoWidget(); // Re-added initialization
+
+            // Bind the search logic to the sidebar search bar
+            const sidebarSearchInput = document.getElementById('sidebar-search');
+            if (sidebarSearchInput) {
+                sidebarSearchInput.addEventListener('input', handleSearchEvent);
+            }
+
+            window.addEventListener('popstate', e => {
+                if (e.state && e.state.articleId) loadArticleContent(e.state.articleId, false);
+            });
+        })();
+
+        // --- Image Lightbox ---
+        (() => {
+            // Create and inject the lightbox HTML into the page
+            const lightbox = document.createElement('div');
+            lightbox.id = 'image-lightbox';
+            lightbox.className = 'hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[1003] opacity-0 transition-opacity duration-300 cursor-zoom-out';
+            lightbox.innerHTML = `
+                <button id="lightbox-close" class="absolute top-5 right-6 text-white text-5xl font-light leading-none opacity-80 hover:opacity-100">&times;</button>
+                <img id="lightbox-image" src="" alt="Zoomed Image" class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl cursor-pointer">
+            `;
+            document.body.appendChild(lightbox);
+
+            const lightboxImage = document.getElementById('lightbox-image');
+            const mainContent = document.getElementById('detail-main-content');
+
+            // Function to open the lightbox
+            function openLightbox(e) {
+                if (e.target.tagName === 'IMG' && e.target.closest('.prose')) {
+                    lightboxImage.src = e.target.src;
+                    lightbox.classList.remove('hidden');
+                    setTimeout(() => lightbox.classList.remove('opacity-0'), 10); // Start fade-in transition
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                }
+            }
+
+            // Function to close the lightbox
+            function closeLightbox() {
+                lightbox.classList.add('opacity-0');
+                setTimeout(() => {
+                    lightbox.classList.add('hidden');
+                    lightboxImage.src = ''; // Clear src to prevent showing old image briefly
+                }, 300); // Match duration with transition
+                document.body.style.overflow = ''; // Restore background scrolling
+            }
+
+            // Event listeners
+            mainContent.addEventListener('click', openLightbox);
+            
+            // Click anywhere on the lightbox (backdrop, image, or close button) to close it.
+            lightbox.addEventListener('click', () => {
+                closeLightbox();
+            });
+
+            // Close on Escape key press
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
+                    closeLightbox();
+                }
+            });
+        })();
+
+    });
+    </script>
+</body>
+</html>
