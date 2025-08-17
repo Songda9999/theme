@@ -107,7 +107,6 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // For English, we return mock data. Replace this with your actual API call.
             if (lang === 'en-US') {
-                console.log(`MOCK FETCH: ${endpoint} for ${langCode}`);
                 await new Promise(resolve => setTimeout(resolve, 300));
                 if (endpoint.includes('articles')) {
                     return { articles: [
@@ -322,7 +321,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof zE === 'function') {
             try {
                 zE('webWidget', 'hide');
-                console.log('Zendesk widget hidden via zE API');
             } catch (error) {
                 console.warn('Failed to hide via zE API:', error);
             }
@@ -354,14 +352,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showZendeskWidget() {
-        console.log('Showing Zendesk widget...');
         zendeskIsAuthorizedToShow = true;
         
         if (typeof zE === 'function') {
             try {
                 zE('webWidget', 'show');
                 zE('webWidget', 'open');
-                console.log('Zendesk widget shown and opened');
             } catch (error) {
                 console.warn('Failed to show Zendesk widget:', error);
             }
@@ -375,27 +371,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize Zendesk control
     function initializeZendeskControl() {
-        console.log('Initializing Zendesk control...');
-        
         // Wait for zE to be available
         const waitForZE = () => {
             if (typeof zE !== 'undefined') {
                 zE(function() {
-                    console.log('zE function available, setting up control...');
-                    
                     // Hide widget initially
                     hideZendeskWidget();
                     
                     // Set up event listeners
                     try {
                         zE('webWidget:on', 'close', function() {
-                            console.log('Zendesk widget closed by user, hiding...');
                             zendeskIsAuthorizedToShow = false;
                             setTimeout(hideZendeskWidget, 100);
                         });
                         
                         zE('webWidget:on', 'open', function() {
-                            console.log('Zendesk widget opened');
+                            // Widget opened
                         });
                     } catch (e) {
                         console.warn('Could not set up zE event listeners:', e);
@@ -430,7 +421,6 @@ document.addEventListener('DOMContentLoaded', function() {
     startChatFromFaqBtn.addEventListener('click', () => {
         closeModal();
         setTimeout(() => {
-            console.log('User clicked customer support, showing Zendesk widget...');
             showZendeskWidget();
         }, 300);
     });
