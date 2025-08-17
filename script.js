@@ -5,6 +5,75 @@
   const ENTER = 13;
   const ESCAPE = 27;
 
+  // Helper function to get current language from URL
+  function getCurrentLanguageFromURL() {
+    const path = window.location.pathname;
+    const segments = path.split('/').filter(segment => segment.length > 0);
+    
+    // Check if first segment is a language code
+    if (segments.length > 0) {
+      const possibleLangCode = segments[0];
+      // Common language codes pattern
+      if (/^[a-z]{2}(-[a-z]{2})?$/i.test(possibleLangCode)) {
+        return possibleLangCode.toLowerCase();
+      }
+    }
+    
+    // Fallback: check for language in URL parameters or default
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('locale') || 'zh-cn';
+  }
+
+  // Helper function to convert language code for URLs
+  function getLanguageForURL(langCode) {
+    // Convert language codes to the format used in URLs
+    const langMap = {
+      'zh-cn': 'zh_CN',
+      'zh-tw': 'zh_TW', 
+      'en-us': 'en_US',
+      'en-gb': 'en_GB',
+      'ja': 'ja_JP',
+      'ko': 'ko_KR',
+      'fr': 'fr_FR',
+      'de': 'de_DE',
+      'es': 'es_ES',
+      'pt': 'pt_BR',
+      'ru': 'ru_RU',
+      'ar': 'ar_SA',
+      'th': 'th_TH',
+      'vi': 'vi_VN',
+      'id': 'id_ID',
+      'hi': 'hi_IN',
+      'tr': 'tr_TR',
+      'it': 'it_IT',
+      'nl': 'nl_NL',
+      'pl': 'pl_PL'
+    };
+    return langMap[langCode] || 'zh_CN';
+  }
+
+  // Helper function to update all URLs with new language
+  function updateURLsWithLanguage(newLangCode) {
+    const urlLangCode = getLanguageForURL(newLangCode);
+    
+    // Update all elements with data-translate-href attribute
+    const elementsWithTranslateHref = document.querySelectorAll('[data-translate-href]');
+    elementsWithTranslateHref.forEach(element => {
+      const currentHref = element.getAttribute('href');
+      if (currentHref) {
+        // Replace language code in URL
+        const updatedHref = currentHref.replace(/\/[a-z]{2}_[A-Z]{2}\//g, `/${urlLangCode}/`);
+        element.setAttribute('href', updatedHref);
+      }
+    });
+    
+    // Store language preference
+    localStorage.setItem('preferred-language', newLangCode);
+    
+    // Optionally reload page with new language (uncomment if needed)
+    // window.location.reload();
+  }
+
   function toggleNavigation(toggle, menu) {
     const isExpanded = menu.getAttribute("aria-expanded") === "true";
     menu.setAttribute("aria-expanded", !isExpanded);
@@ -88,13 +157,39 @@
     const mobileLanguageText = document.querySelector("#mobile-language-text");
     
     if (mobileLanguageButton && mobileLanguageText) {
+      // Dynamic language list based on available translations
       const languages = [
         { code: 'zh-cn', name: '简体中文' },
-        { code: 'en-us', name: 'English' }
+        { code: 'zh-tw', name: '繁體中文' },
+        { code: 'en-us', name: 'English (US)' },
+        { code: 'en-gb', name: 'English (UK)' },
+        { code: 'ja', name: '日本語' },
+        { code: 'ko', name: '한국어' },
+        { code: 'fr', name: 'Français' },
+        { code: 'de', name: 'Deutsch' },
+        { code: 'es', name: 'Español' },
+        { code: 'pt', name: 'Português' },
+        { code: 'ru', name: 'Русский' },
+        { code: 'ar', name: 'العربية' },
+        { code: 'th', name: 'ไทย' },
+        { code: 'vi', name: 'Tiếng Việt' },
+        { code: 'id', name: 'Bahasa Indonesia' },
+        { code: 'hi', name: 'हिन्दी' },
+        { code: 'tr', name: 'Türkçe' },
+        { code: 'it', name: 'Italiano' },
+        { code: 'nl', name: 'Nederlands' },
+        { code: 'pl', name: 'Polski' }
       ];
       
-      let currentLanguageIndex = 0;
+      // Get current language from URL or default to zh-cn
+      let currentLanguageCode = getCurrentLanguageFromURL() || 'zh-cn';
+      let currentLanguageIndex = languages.findIndex(lang => lang.code === currentLanguageCode);
+      if (currentLanguageIndex === -1) currentLanguageIndex = 0;
+      
       let isLanguageMenuOpen = false;
+      
+      // Update initial display text
+      mobileLanguageText.textContent = languages[currentLanguageIndex].name;
       
       // Create language selection menu
       const languageMenu = document.createElement('div');
@@ -125,14 +220,17 @@
             // Update the display text
             mobileLanguageText.textContent = newLanguage.name;
             
-            // Here you would typically save the language preference and reload content
-            console.log('Language switched to:', newLanguage.code);
+            // Update all URLs with new language
+            updateURLsWithLanguage(newLanguage.code);
             
             // Add brief visual feedback
             mobileLanguageButton.style.backgroundColor = '#f3f4f6';
             setTimeout(() => {
               mobileLanguageButton.style.backgroundColor = 'transparent';
             }, 200);
+            
+            // Update current language code
+            currentLanguageCode = newLanguage.code;
           }
           
           // Close the menu
@@ -259,7 +357,6 @@
       });
 
       element.addEventListener("keyup", (event) => {
-        console.log("escape");
         if (event.keyCode === ESCAPE) {
           closeNavigation(toggle, element);
         }
