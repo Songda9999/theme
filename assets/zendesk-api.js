@@ -153,12 +153,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Automatically load articles when page loads
     // Add a small delay to ensure translations are loaded
     setTimeout(() => {
-        console.log('Page loaded, automatically calling API functions...');
         if (window.translations && window.currentLanguage) {
             window.loadLatestArticles();
             window.loadPopularArticles();
         } else {
-            console.log('Translations not ready, retrying...');
             // Retry after another short delay
             setTimeout(() => {
                 window.loadLatestArticles();
