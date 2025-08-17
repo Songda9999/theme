@@ -22,7 +22,7 @@
   "community_image_label": "社区横幅",
   "community_post_group_label": "社区帖子元素",
   "community_topic_group_label": "社区主题元素",
-  "favicon_description": "您的浏览器地址栏中显示的图标",
+  "favicon_description": "浏览器地址栏中显示的图标",
   "favicon_label": "网站头像",
   "follow_article_description": "用户可关注特定的文章",
   "follow_article_label": "关注",
@@ -72,9 +72,8 @@
   "text_font_description": "正文文本字体",
   "text_font_label": "文本字体",
   "visited_link_color_description": "已访问链接元素的文本颜色",
-  "visited_link_color_label": "已访问链接颜色"
-}
-{
+  "visited_link_color_label": "已访问链接颜色",
+
   "nav": {
     "market": "市场行情",
     "spot": "现货交易",
