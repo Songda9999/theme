@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载优化后的主题文件</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .download-btn {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            margin: 20px 0;
+            transition: background 0.3s;
+        }
+        .download-btn:hover {
+            background: #0056b3;
+        }
+        .file-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 优化后的主题文件下载</h1>
+        
+        <div class="file-info">
+            <h3>📦 文件信息</h3>
+            <p><strong>文件名：</strong>byextheme-optimized.zip</p>
+            <p><strong>文件大小：</strong>4.1 MB</p>
+            <p><strong>包含内容：</strong>完整的优化后 Zendesk 主题</p>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 优化内容</h3>
+            <ul>
+                <li>✅ 中英文翻译分离，独立维护</li>
+                <li>✅ 动态配置支持，可通过 Zendesk 设置面板修改</li>
+                <li>✅ 保留硬编码链接功能</li>
+                <li>✅ 支持自定义 CSS/JS</li>
+                <li>✅ 完整的主题配置选项</li>
+            </ul>
+        </div>
+
+        <a href="byextheme-optimized.zip" class="download-btn" download>
+            📥 下载优化后的主题文件
+        </a>
+
+        <div class="instructions">
+            <h3>🔧 使用说明</h3>
+            <ol>
+                <li>下载并解压 <code>byextheme-optimized.zip</code></li>
+                <li>将 <code>byextheme</code> 文件夹上传到 Zendesk 主题编辑器</li>
+                <li>在主题设置中配置颜色、链接等功能</li>
+                <li>发布主题即可使用</li>
+            </ol>
+        </div>
+
+        <div class="file-info">
+            <h3>📁 主要文件</h3>
+            <ul>
+                <li><code>manifest.json</code> - 动态配置支持</li>
+                <li><code>assets/config.js</code> - 配置管理</li>
+                <li><code>assets/translations-zh.js</code> - 中文翻译</li>
+                <li><code>assets/translations-en.js</code> - 英文翻译</li>
+                <li><code>assets/translation-new.js</code> - 翻译系统</li>
+                <li><code>templates/header.hbs</code> - 头部导航</li>
+                <li><code>templates/home_page.hbs</code> - 首页模板</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
